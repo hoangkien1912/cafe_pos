@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chọn bàn</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .table-box { 
+            display: inline-block; 
+            width: 120px; 
+            padding: 20px; 
+            margin: 10px;
+            background: #f2f2f2;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Chọn bàn để Order</h2>
+
+{% for t in tables %}
+    <div class="table-box" onclick="location.href='/order/{{ t.id }}'">
+        <h3>{{ t.table_name }}</h3>
+        <p>{% if t.status == 0 %}Trống{% else %}Đang dùng{% endif %}</p>
+    </div>
+{% endfor %}
+
+</body>
+</html>

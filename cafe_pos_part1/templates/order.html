@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Ban {{ table.table_name }}</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f5f6f8;
+        color: #222;
+    }
+
+    .page {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+        gap: 16px;
+        padding: 16px;
+        min-height: 100vh;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .panel h1,
+    .panel h2,
+    .panel h3,
+    .panel p {
+        margin-top: 0;
+    }
+
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+
+    .product {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .product h3 {
+        margin: 0;
+        font-size: 17px;
+        line-height: 1.35;
+    }
+
+    .price {
+        color: #0f766e;
+        font-weight: 700;
+    }
+
+    .controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .qty-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .qty-btn {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        background: #0f766e;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .checkout-btn {
+        width: 100%;
+        background: #ea580c;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .clear-btn {
+        width: 100%;
+        margin-top: 10px;
+        background: #e5e7eb;
+        color: #222;
+    }
+
+    .bill-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 16px 0;
+    }
+
+    .bill-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed #d1d5db;
+    }
+
+    .muted {
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .total {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 16px 0;
+        color: #111827;
+    }
+
+    @media (max-width: 900px) {
+        .page {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="page">
+    <section class="panel">
+        <h1>{{ table.table_name }}</h1>
+        <p class="muted">Bam + de them mon, bam - de giam so luong.</p>
+
+        <div class="menu-grid">
+            {% for product in products %}
+            <div class="product">
+                <div>
+                    <h3>{{ product.name }}</h3>
+                    <p class="price">{{ "{:,.0f}".format(product.price) }}đ</p>
+                </div>
+
+                <div class="controls">
+                    <div class="qty-box">
+                        <button class="qty-btn" onclick='changeQty({{ product.id }}, {{ product.name | tojson }}, {{ product.price | int }}, -1)'>-</button>
+                        <strong id="qty-{{ product.id }}">0</strong>
+                        <button class="qty-btn" onclick='changeQty({{ product.id }}, {{ product.name | tojson }}, {{ product.price | int }}, 1)'>+</button>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <p>Chua co san pham dang ban.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <aside class="panel">
+        <h2>Hoa don</h2>
+        <p class="muted">Khong can chon phuong thuc thanh toan, chi bam nut thanh toan.</p>
+
+        <div id="bill-items" class="bill-list"></div>
+        <div class="total">Tong: <span id="total">0</span>đ</div>
+
+        <button class="checkout-btn" onclick="submitCheckout()">Thanh toan</button>
+        <button class="clear-btn" onclick="clearBill()">Xoa het</button>
+
+        <p id="message" class="muted" style="margin-top: 14px;"></p>
+    </aside>
+</div>
+
+<script>
+const tableId = {{ table.id }};
+const billItems = [];
+
+function formatCurrency(value) {
+    return Number(value).toLocaleString("vi-VN");
+}
+
+function findItem(productId) {
+    return billItems.find((item) => item.product_id === productId);
+}
+
+function syncQtyLabel(productId) {
+    const item = findItem(productId);
+    document.getElementById(`qty-${productId}`).innerText = item ? item.quantity : 0;
+}
+
+function renderBill() {
+    const container = document.getElementById("bill-items");
+    const totalNode = document.getElementById("total");
+    const total = billItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    container.innerHTML = "";
+
+    if (billItems.length === 0) {
+        container.innerHTML = "<p class='muted'>Hoa don dang trong.</p>";
+    } else {
+        billItems.forEach((item) => {
+            const lineTotal = item.price * item.quantity;
+            const div = document.createElement("div");
+            div.className = "bill-item";
+            div.innerHTML = `
+                <div>
+                    <strong>${item.name}</strong>
+                    <div class="muted">${formatCurrency(item.price)}đ x ${item.quantity}</div>
+                </div>
+                <strong>${formatCurrency(lineTotal)}đ</strong>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    totalNode.innerText = formatCurrency(total);
+}
+
+function changeQty(productId, productName, price, delta) {
+    const existing = findItem(productId);
+
+    if (!existing && delta < 0) {
+        return;
+    }
+
+    if (existing) {
+        existing.quantity += delta;
+
+        if (existing.quantity <= 0) {
+            const index = billItems.findIndex((item) => item.product_id === productId);
+            billItems.splice(index, 1);
+        }
+    } else if (delta > 0) {
+        billItems.push({
+            product_id: productId,
+            name: productName,
+            price: price,
+            quantity: delta
+        });
+    }
+
+    document.getElementById("message").innerText = "";
+    syncQtyLabel(productId);
+    renderBill();
+}
+
+function clearBill() {
+    while (billItems.length > 0) {
+        const item = billItems.pop();
+        syncQtyLabel(item.product_id);
+    }
+
+    document.getElementById("message").innerText = "";
+    renderBill();
+}
+
+async function submitCheckout() {
+    if (billItems.length === 0) {
+        document.getElementById("message").innerText = "Vui long chon it nhat mot mon.";
+        return;
+    }
+
+    try {
+        const response = await fetch("/checkout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                table_id: tableId,
+                items: billItems.map((item) => ({
+                    product_id: item.product_id,
+                    quantity: item.quantity
+                }))
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            document.getElementById("message").innerText = result.error || "Thanh toan that bai.";
+            return;
+        }
+
+        document.getElementById("message").innerText =
+            `Thanh toan thanh cong. Ma don #${result.order_id}, cong ${result.points_added} diem.`;
+        clearBill();
+    } catch (error) {
+        document.getElementById("message").innerText = "Khong ket noi duoc toi may chu.";
+    }
+}
+
+renderBill();
+</script>
+</body>
+</html>

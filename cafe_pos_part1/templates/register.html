@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Đăng ký tài khoản</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="box">
+    <h2>Đăng ký</h2>
+
+    <form method="POST">
+        <label>Tài khoản</label>
+        <input type="text" name="username" required>
+
+        <label>Mật khẩu</label>
+        <input type="password" name="password" required>
+
+        <label>Họ tên</label>
+        <input type="text" name="fullname" required>
+
+        <label>Số điện thoại</label>
+        <input type="text" name="phone" required>
+
+        <label>Email</label>
+        <input type="email" name="email">
+
+        <button type="submit">Tạo tài khoản</button>
+
+        <p>Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+
+        {% if message %} <p class="err">{{ message }}</p> {% endif %}
+    </form>
+</div>
+
+</body>
+</html>

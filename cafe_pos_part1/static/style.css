@@ -1,0 +1,35 @@
+body {
+    background: #e9e8f5;
+    font-family: Arial;
+}
+
+.box {
+    width: 360px;
+    margin: 60px auto;
+    padding: 25px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 0px 12px #aaa;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 12px;
+}
+
+button {
+    background: #5c6bc0;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #3949ab;
+}
+
+.err {
+    color: red;
+    text-align: center;
+}

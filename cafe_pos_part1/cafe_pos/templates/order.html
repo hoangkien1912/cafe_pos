@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn bàn - Cafe POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-emerald-600 p-2 rounded-lg text-white">
+                        <i class="fas fa-mug-hot"></i>
+                    </div>
+                    <span class="text-xl font-bold text-slate-800">Cafe POS</span>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="hidden sm:flex flex-col items-end">
+                        <span class="text-sm font-medium text-slate-700">Xin chào, {{ user.fullname }}</span>
+                        <span class="text-xs text-slate-400">Nhân viên phục vụ</span>
+                    </div>
+                    <div class="h-8 w-[1px] bg-slate-200"></div>
+                    <a href="/logout" class="text-slate-500 hover:text-red-600 transition-colors flex items-center gap-2 text-sm font-semibold">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Đăng xuất
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="mb-10 text-center sm:text-left">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">Sơ đồ bàn</h1>
+            <p class="text-slate-500 italic">Chọn một bàn trống để bắt đầu tạo đơn hàng mới.</p>
+        </div>
+
+        <!-- Tables Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {% for t in tables %}
+            <div onclick="location.href='/order/{{ t.id }}'" 
+                 class="group bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-200 transition-all duration-300 cursor-pointer relative">
+                
+                <!-- Table Image -->
+                <div class="relative h-44 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400&auto=format&fit=crop" 
+                         alt="Bàn Cafe" 
+                         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    
+                    <!-- Status Badge -->
+                    <div class="absolute top-4 right-4">
+                        {% if t.status == 0 %}
+                            <span class="bg-emerald-500/90 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Trống</span>
+                        {% else %}
+                            <span class="bg-amber-500/90 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Đang dùng</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Table Info -->
+                <div class="p-6 text-center">
+                    <h3 class="text-xl font-bold text-slate-800 mb-1 group-hover:text-emerald-600 transition-colors">{{ t.table_name }}</h3>
+                    <p class="text-sm text-slate-400 font-medium">Khu vực sảnh chính</p>
+                    
+                    <div class="mt-4 pt-4 border-t border-slate-50 flex justify-center">
+                        <span class="inline-flex items-center gap-2 text-xs font-bold {{ 'text-emerald-600' if t.status == 0 else 'text-slate-300' }}">
+                            <i class="fas {{ 'fa-plus-circle' if t.status == 0 else 'fa-lock' }}"></i>
+                            {{ 'TẠO ĐƠN' if t.status == 0 else 'XEM ĐƠN' }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Hover Effect Overlay -->
+                <div class="absolute inset-0 ring-2 ring-inset ring-emerald-500 opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity pointer-events-none"></div>
+            </div>
+            {% else %}
+            <div class="col-span-full text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                <i class="fas fa-border-none text-4xl text-slate-200 mb-4"></i>
+                <p class="text-slate-400">Hiện tại chưa có bàn nào được thiết lập.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn bàn - Cafe POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="pb-10">
+
+    <!-- Header / Navigation -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-4">
+                    <!-- NÚT QUAY LẠI TRANG CHỦ -->
+                    <a href="/home" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-emerald-700 transition-colors" title="Quay lại Trang chủ">
+                        <i class="fas fa-arrow-left text-lg"></i>
+                    </a>
+
+                    <div class="flex items-center gap-2">
+                        <div class="bg-emerald-600 p-2 rounded-lg text-white">
+                            <i class="fas fa-chair"></i>
+                        </div>
+                        <span class="text-xl font-bold text-slate-800">Chọn Bàn</span>
+                    </div>
+                </div>
+                
+                <div class="text-sm font-medium text-slate-500">
+                    <i class="fas fa-user-circle mr-1"></i> {{ user.fullname }}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            {% if tables %}
+                {% for t in tables %}
+                <a href="/order/{{ t.id }}" class="group relative bg-white rounded-3xl p-1 shadow-sm border border-slate-200 hover:shadow-lg hover:border-emerald-300 transition-all cursor-pointer block">
+                    <!-- Table Info -->
+                    <div class="p-6 text-center">
+                        <h3 class="text-xl font-bold text-slate-800 mb-1 group-hover:text-emerald-600 transition-colors">{{ t.table_name }}</h3>
+                        <p class="text-sm text-slate-400 font-medium">Khu vực sảnh</p>
+                        
+                        <div class="mt-4 pt-4 border-t border-slate-50 flex justify-center">
+                            <span class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600">
+                                <i class="fas fa-plus-circle"></i> CHỌN BÀN
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                    <i class="fas fa-border-none text-4xl text-slate-200 mb-4"></i>
+                    <p class="text-slate-500 font-medium">Chưa có bàn nào trong hệ thống</p>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

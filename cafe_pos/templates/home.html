@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang chủ - Cafe POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-10">
+
+    <!-- Header -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="/home" class="flex items-center gap-2">
+                <div class="bg-emerald-600 p-2 rounded-lg text-white">
+                    <i class="fas fa-mug-hot"></i>
+                </div>
+                <span class="text-xl font-bold text-slate-800 tracking-tight">Cafe POS</span>
+            </a>
+            <a href="/logout" class="text-slate-500 hover:text-red-600 transition-colors flex items-center gap-2">
+                <span class="text-sm font-medium hidden sm:block">Đăng xuất</span>
+                <i class="fas fa-sign-out-alt text-xl"></i>
+            </a>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-4 py-8">
+        <!-- Lời chào -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-800">Xin chào, {{ user.fullname }}!</h1>
+            <p class="text-slate-500 text-sm">Chào mừng bạn quay trở lại cửa hàng.</p>
+        </div>
+
+        <!-- Thẻ Thành viên (Điểm thưởng) -->
+        <div class="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-3xl p-6 text-white shadow-xl shadow-emerald-200/50 mb-8 relative overflow-hidden">
+            <div class="relative z-10 flex justify-between items-start">
+                <div>
+                    <p class="text-emerald-100 text-xs font-medium uppercase tracking-widest mb-1">Hạng thành viên</p>
+                    <h2 class="text-2xl font-bold italic drop-shadow-md">{{ user.vip_level | default('Thành viên mới', true) | upper }}</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-emerald-100 text-xs font-medium uppercase tracking-widest mb-1">Điểm tích lũy</p>
+                    <p class="text-4xl font-black drop-shadow-md">
+                        {{ "{:,.0f}".format(user.points) if user.points else "0" }} <span class="text-lg font-normal">P</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-12 flex items-center justify-between relative z-10">
+                <div class="text-sm font-medium opacity-90">
+                    <p><i class="fas fa-phone-alt mr-2 text-xs"></i>{{ user.phone | default('Chưa cập nhật SĐT', true) }}</p>
+                </div>
+                <div class="bg-white/20 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border border-white/20">
+                    Thành viên từ {{ user.created_at.strftime('%m/%Y') if user.created_at else 'N/A' }}
+                </div>
+            </div>
+
+            <!-- Họa tiết trang trí -->
+            <div class="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-2xl"></div>
+            <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-black/10 rounded-full blur-2xl"></div>
+        </div>
+
+        <!-- Nút thao tác nhanh -->
+        <div class="grid grid-cols-2 gap-4 mb-10">
+            <a href="/tables" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all flex flex-col items-center text-center group">
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-3 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                    <i class="fas fa-plus text-xl"></i>
+                </div>
+                <span class="font-bold text-slate-700 group-hover:text-emerald-700">Đặt món mới</span>
+            </a>
+
+            <a href="/history" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all flex flex-col items-center text-center group">
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <i class="fas fa-history text-xl"></i>
+                </div>
+                <span class="font-bold text-slate-700 group-hover:text-blue-700">Lịch sử của tôi</span>
+            </a>
+        </div>
+
+        <!-- Vùng hiển thị Lịch sử đơn hàng (Chỉ hiện khi vào route /history) -->
+        {% if show_history %}
+            <div>
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <h3 class="font-bold text-slate-800 text-lg">Lịch sử đơn hàng</h3>
+                    <a href="/home" class="text-sm text-emerald-600 font-medium hover:underline">Đóng</a>
+                </div>
+
+                {% if orders %}
+                    <div class="space-y-4">
+                        {% for order in orders %}
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow">
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                                    <i class="fas fa-receipt text-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800">Đơn hàng #{{ order.id }}</p>
+                                    <p class="text-sm text-slate-500 mt-0.5"><i class="far fa-clock mr-1"></i>{{ order.created_at.strftime('%H:%M - %d/%m/%Y') }}</p>
+                                    <span class="inline-block mt-2 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-md border border-emerald-100">
+                                        {{ order.table_name }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-black text-slate-800 text-lg">{{ "{:,.0f}".format(order.total_amount) }}đ</p>
+                                <p class="text-xs font-medium text-emerald-600 mt-1">+{{ (order.total_amount // 1000) | int }} điểm</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Trạng thái trống nếu chưa có đơn nào -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
+                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-4">
+                            <i class="fas fa-box-open text-2xl"></i>
+                        </div>
+                        <p class="font-bold text-slate-800">Bạn chưa có đơn hàng nào</p>
+                        <p class="text-sm text-slate-500 mt-1">Hãy đặt món để bắt đầu tích lũy điểm nhé!</p>
+                        <a href="/tables" class="inline-block mt-4 px-6 py-2 bg-emerald-600 text-white font-medium rounded-full hover:bg-emerald-700 transition-colors">
+                            Đặt món ngay
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Trạng thái mặc định ở Trang chủ (Gợi ý xem lịch sử) -->
+            <div class="bg-gradient-to-r from-slate-100 to-slate-50 rounded-2xl border border-slate-200 p-6 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-slate-800">Theo dõi chi tiêu</h4>
+                    <p class="text-sm text-slate-500 mt-1">Xem lại các món bạn đã thưởng thức.</p>
+                </div>
+                <a href="/history" class="px-4 py-2 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors text-sm">
+                    Xem ngay
+                </a>
+            </div>
+        {% endif %}
+
+    </main>
+
+</body>
+</html>

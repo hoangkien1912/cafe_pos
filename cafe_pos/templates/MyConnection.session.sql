@@ -6,6 +6,15 @@ COLLATE utf8mb4_unicode_ci;
 -- chọn database
 USE cafe_pos;
 
+-- ======================================================================
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE order_items;
+TRUNCATE TABLE receipts;
+TRUNCATE TABLE orders;
+TRUNCATE TABLE products;
+TRUNCATE TABLE categories;
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- ============================
 -- 1. Bảng phân quyền (2 role)
 -- ============================
@@ -43,7 +52,7 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
-INSERT INTO users (username, password, fullname, phone, email, role_id)
+INSERT IGNORE INTO users (username, password, fullname, phone, email, role_id)
 VALUES ('admin', 'admin123', 'Quan tri vien', '', NULL, 1);
 
 
@@ -66,13 +75,35 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(100) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     status TINYINT DEFAULT 1, -- 1: còn bán
+    image_url VARCHAR(255) DEFAULT 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop',
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
-ALTER TABLE products MODIFY COLUMN image_url TEXT;
+-- ============================================
+-- 1. Thêm các danh mục mẫu
+-- ============================================
+INSERT IGNORE INTO categories (id, name, description) VALUES
+(1, 'Cà phê', 'Cà phê pha phin, pha máy'),
+(2, 'Trà & Trà Sữa', 'Các loại trà trái cây tươi và trà sữa'),
+(3, 'Nước Ép & Sinh Tố', 'Đồ uống hoa quả tươi'),
+(4, 'Bánh Ngọt', 'Bánh ngọt ăn kèm');
+
+-- ============================================
+-- 2. Thêm một vài món ăn/đồ uống mẫu
+-- ============================================
+-- (Cột status: 1 nghĩa là đang mở bán, khớp với cấu trúc bảng của bạn)
+INSERT IGNORE INTO products (category_id, name, price, status, image_url) VALUES
+(1, 'Cà phê đen đá', 25000, 1, 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=200&auto=format&fit=crop'),
+(1, 'Cà phê sữa đá', 29000, 1, 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=200&auto=format&fit=crop'),
+(1, 'Bạc xỉu', 35000, 1, 'https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?q=80&w=200&auto=format&fit=crop'),
+(2, 'Trà đào cam sả', 45000, 1, 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=200&auto=format&fit=crop'),
+(2, 'Trà vải thanh nhiệt', 45000, 1, 'https://images.unsplash.com/photo-1505330622279-bf7d7fc918f4?q=80&w=200&auto=format&fit=crop'),
+(3, 'Nước cam ép tươi', 40000, 1, 'https://images.unsplash.com/photo-1600271886742-f049cd451b06?q=80&w=200&auto=format&fit=crop'),
+(4, 'Bánh Croissant', 35000, 1, 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=200&auto=format&fit=crop');
+
 -- ============================
 -- 5. Danh sách bàn
 -- ============================
@@ -83,7 +114,7 @@ CREATE TABLE IF NOT EXISTS tables (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO tables (table_name, status) VALUES
+INSERT IGNORE INTO tables (table_name, status) VALUES
 ('Bàn 1', 0),
 ('Bàn 2', 0),
 ('Bàn 3', 0),

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Cafe POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+    </style>
+</head>
+<body class="flex">
+
+    <aside class="w-64 bg-slate-900 min-h-screen text-white p-6 hidden md:block">
+        <div class="flex items-center gap-3 mb-10">
+            <div class="bg-emerald-500 p-2 rounded-lg">
+                <i class="fas fa-mug-hot text-xl"></i>
+            </div>
+            <h1 class="text-xl font-bold">Cafe Admin</h1>
+        </div>
+        
+        <nav class="space-y-2" id="sidebar-nav">
+            <a href="{{ url_for('admin_dashboard') }}" data-page="dashboard" class="nav-item flex items-center gap-3 p-3 rounded-xl transition hover:bg-slate-800 text-slate-300">
+                <i class="fas fa-chart-pie"></i> Tổng quan
+            </a>
+            <a href="{{ url_for('admin_products') }}" data-page="products" class="nav-item flex items-center gap-3 p-3 rounded-xl transition hover:bg-slate-800 text-slate-300">
+                <i class="fas fa-coffee"></i> Quản lý món
+            </a>
+            <a href="{{ url_for('admin_reports') }}" data-page="reports" class="nav-item flex items-center gap-3 p-3 rounded-xl transition hover:bg-slate-800 text-slate-300">
+                <i class="fas fa-file-invoice-dollar"></i> Báo cáo
+            </a>
+            <div class="pt-10">
+                <a href="{{ url_for('logout') }}" class="flex items-center gap-3 p-3 text-red-400 hover:bg-red-500/10 rounded-xl">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-4 md:p-8 h-screen overflow-y-auto">
+        <header class="flex justify-between items-center mb-8">
+            <h2 id="page-title" class="text-2xl font-bold text-slate-800">
+                {% if page == 'dashboard' %}Dashboard Tổng quan{% endif %}
+                {% if page == 'products' %}Quản lý Thực đơn{% endif %}
+                {% if page == 'reports' %}Báo cáo doanh thu{% endif %}
+            </h2>
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-emerald-100 text-emerald-700 flex items-center justify-center rounded-full font-bold">
+                    {{ session.get('fullname', 'Admin')[0]|upper }}
+                </div>
+            </div>
+        </header>
+
+        {% if page == 'dashboard' %}
+        <div id="dashboard-view" class="view-section active">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-sm mb-1">Tổng doanh thu</p>
+                    <h3 class="text-3xl font-bold text-slate-800">{{ "{:,.0f}".format(revenue|default(0)) }}đ</h3>
+                    <div class="mt-4 text-emerald-500 text-sm flex items-center gap-1">
+                        <i class="fas fa-arrow-up"></i> Tăng trưởng tốt
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-sm mb-1">Đơn hàng đã xong</p>
+                    <h3 class="text-3xl font-bold text-slate-800">{{ orders|default(0) }}</h3>
+                    <div class="mt-4 text-slate-400 text-sm">Cập nhật thời gian thực</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-sm mb-1">Khách hàng thành viên</p>
+                    <h3 class="text-3xl font-bold text-slate-800">{{ customers|default(0) }}</h3>
+                    <div class="mt-4 text-emerald-500 text-sm">Dữ liệu thực tế</div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                <h4 class="font-bold mb-6">Doanh thu 7 ngày qua</h4>
+                <canvas id="revenueChart" height="100"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if page == 'products' %}
+        <div id="products-view" class="view-section active">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <h4 class="font-bold">Danh sách món ăn</h4>
+                    <button onclick="openModal('add')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition">
+                        <i class="fas fa-plus mr-2"></i>Thêm món mới
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+                            <tr>
+                                <th class="px-6 py-4">Món ăn</th>
+                                <th class="px-6 py-4">Danh mục</th>
+                                <th class="px-6 py-4">Giá</th>
+                                <th class="px-6 py-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for p in products %}
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 flex items-center gap-3">
+                                    <img src="{{ p.image_url or 'https://via.placeholder.com/150' }}" class="w-12 h-12 rounded-lg object-cover" alt="{{ p.name }}">
+                                    <span class="font-medium text-slate-700">{{ p.name }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-slate-600 text-sm">{{ p.cat_name or 'Khác' }}</td>
+                                <td class="px-6 py-4 font-bold text-emerald-600">{{ "{:,.0f}".format(p.price) }}đ</td>
+                                <td class="px-6 py-4 space-x-2">
+                                    <button onclick="openModal('edit', '{{ p.id }}', '{{ p.name }}', '{{ p.price }}', '{{ p.category_id }}', '{{ p.image_url }}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fas fa-edit"></i></button>
+                                    <button onclick="confirmDeleteProduct('{{ p.id }}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">Chưa có món ăn nào.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if page == 'reports' %}
+        <div id="reports-view" class="view-section active">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-800">Chi tiết doanh thu theo ngày</h3>
+                <a href="{{ url_for('export_admin_report_pdf') }}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl font-medium transition shadow-sm flex items-center gap-2">
+                    <i class="fas fa-file-pdf"></i> Xuất file PDF
+                </a>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+                            <tr>
+                                <th class="px-6 py-4">Ngày</th>
+                                <th class="px-6 py-4">Số đơn hoàn thành</th>
+                                <th class="px-6 py-4">Doanh thu (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for r in daily_reports %}
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 font-medium text-slate-700">{{ r.date }}</td>
+                                <td class="px-6 py-4 text-slate-600">{{ r.order_count }} đơn</td>
+                                <td class="px-6 py-4 font-bold text-emerald-600">{{ "{:,.0f}".format(r.daily_revenue) }}đ</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="px-6 py-8 text-center text-slate-400">Chưa có dữ liệu.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <div id="productModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-md">
+            <h3 id="modalTitle" class="text-xl font-bold mb-6">Thêm món ăn</h3>
+            <form id="productForm" action="{{ url_for('admin_products') }}" method="POST" class="space-y-4">
+                <input type="hidden" name="action" id="formAction" value="add">
+                <input type="hidden" name="product_id" id="productId">
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Tên món</label>
+                    <input type="text" name="name" id="pName" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Giá (VNĐ)</label>
+                        <input type="number" name="price" id="pPrice" required class="w-full p-3 border border-slate-200 rounded-xl outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Danh mục</label>
+                        <select name="category_id" id="pCat" required class="block w-full px-3 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                            <option value="">-- Chọn --</option>
+                            {% for c in categories %}
+                                <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Link ảnh</label>
+                    <input type="text" name="image_url" id="pImage" class="w-full p-3 border border-slate-200 rounded-xl outline-none" placeholder="https://...">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold hover:bg-slate-200">Hủy</button>
+                    <button type="submit" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700">Lưu lại</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Xác nhận xóa</h3>
+            <p class="text-slate-500 mb-6">Bạn có chắc chắn muốn xóa món này không? Hành động này không thể hoàn tác.</p>
+            <form action="{{ url_for('admin_products') }}" method="POST" class="flex gap-3">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="product_id" id="deleteProductId">
+                
+                <button type="button" onclick="closeConfirm()" class="flex-1 py-2.5 bg-slate-100 rounded-xl font-bold text-slate-700 hover:bg-slate-200 transition">Hủy</button>
+                <button type="submit" class="flex-1 py-2.5 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition">Xóa ngay</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- HIGHLIGHT MENU DỰA TRÊN TRANG HIỆN TẠI (DO FLASK TRUYỀN XUỐNG) ---
+        const activePage = "{{ page }}";
+        document.querySelectorAll('.nav-item').forEach(el => {
+            if (el.dataset.page === activePage) {
+                el.classList.remove('hover:bg-slate-800', 'text-slate-300');
+                el.classList.add('bg-emerald-600', 'text-white');
+            }
+        });
+
+        // --- RENDER CHART BẰNG DỮ LIỆU THẬT ---
+        {% if page == 'dashboard' %}
+        const rawChartData = {{ chart_data | tojson | safe if chart_data else '[]' }};
+        
+        // Sắp xếp lại ngày từ cũ -> mới để chart vẽ đúng chiều
+        const sortedData = rawChartData.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const labels = sortedData.map(d => d.date);
+        const data = sortedData.map(d => parseFloat(d.revenue));
+
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: data,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+        {% endif %}
+
+        // --- PRODUCT MODAL LOGIC ---
+        function openModal(mode, id = '', name = '', price = '', cat = '', img = '') {
+            document.getElementById('productModal').classList.remove('hidden');
+            const formAction = document.getElementById('formAction');
+            const title = document.getElementById('modalTitle');
+
+            if (mode === 'add') {
+                title.innerText = 'Thêm món mới';
+                formAction.value = 'add';
+                document.getElementById('productForm').reset();
+                document.getElementById('productId').value = '';
+            } else if (mode === 'edit') {
+                title.innerText = 'Chỉnh sửa món';
+                formAction.value = 'edit';
+                document.getElementById('productId').value = id;
+                document.getElementById('pName').value = name;
+                document.getElementById('pPrice').value = price;
+                document.getElementById('pCat').value = cat;
+                document.getElementById('pImage').value = img !== 'None' ? img : '';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        // --- DELETE CONFIRMATION LOGIC ---
+        function confirmDeleteProduct(id) {
+            document.getElementById('deleteProductId').value = id;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

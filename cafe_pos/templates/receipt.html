@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hóa đơn #{{ order.id }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
-        /* Ẩn các nút khi in ra giấy */
+        /* Ẩn nút khi in */
         @media print {
             .no-print {
                 display: none;
@@ -24,20 +25,27 @@
         }
     </style>
 </head>
+
 <body class="bg-slate-100 py-10">
 
     <div class="max-w-md mx-auto p-6 bg-white shadow-lg border border-slate-200 bill-container">
+
+        <!-- Header -->
         <div class="text-center mb-4">
             <h2 class="font-bold text-2xl text-slate-800 uppercase">HOÁ ĐƠN CAFE</h2>
             <p class="text-slate-500 text-sm">Mã đơn: #{{ order.id }}</p>
-            <p class="text-slate-500 text-xs italic">{{ order.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+            <p class="text-slate-500 text-xs italic">
+                {{ order.created_at.strftime('%d/%m/%Y %H:%M:%S') }}
+            </p>
         </div>
 
+        <!-- Info -->
         <div class="mb-4 text-sm border-b pb-2">
             <p><strong>Bàn:</strong> {{ order.table_name }}</p>
             <p><strong>Khách hàng:</strong> {{ order.fullname }}</p>
         </div>
 
+        <!-- Danh sách món -->
         <table class="w-full text-sm mb-4">
             <thead>
                 <tr class="border-b text-slate-600">
@@ -46,40 +54,51 @@
                     <th class="text-right py-2">Tiền</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for item in items %}
                 <tr class="border-b border-slate-50">
                     <td class="py-2">{{ item.name }}</td>
                     <td class="text-center py-2">{{ item.quantity }}</td>
-                    <td class="text-right py-2">{{ "{:,.0f}".format(item.price * item.quantity) }}đ</td>
+                    <td class="text-right py-2">
+                        {{ "{:,.0f}".format(item.price * item.quantity) }}đ
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
+        <!-- Tổng cộng -->
         <div class="flex justify-between font-bold text-lg border-t pt-4 text-slate-800">
             <span>TỔNG CỘNG:</span>
             <span>{{ "{:,.0f}".format(order.total_amount) }}đ</span>
         </div>
 
-        <p class="text-center text-xs text-slate-400 mt-6 italic">Cảm ơn quý khách và hẹn gặp lại!</p>
+        <p class="text-center text-xs text-slate-400 mt-6 italic">
+            Cảm ơn quý khách và hẹn gặp lại!
+        </p>
 
+        <!-- Nút in -->
         <div class="no-print mt-8 space-y-2">
-            <button onclick="window.print()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            <button onclick="window.print()" 
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                 </svg>
+
                 In hóa đơn ngay
             </button>
-            <a href="/tables" class="block text-center py-2 text-slate-500 hover:text-slate-800 text-sm font-medium">
+
+            <a href="/tables"
+               class="block text-center py-2 text-slate-500 hover:text-slate-800 text-sm font-medium">
                 Quay lại trang chính
             </a>
         </div>
+
     </div>
 
-    <script>
-        // Tùy chọn: Tự động mở hộp thoại in ngay khi vừa vào trang
-        // window.onload = () => window.print();
-    </script>
 </body>
 </html>

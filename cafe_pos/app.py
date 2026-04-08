@@ -22,6 +22,27 @@ def get_db():
         collation="utf8mb4_unicode_ci",
     )
 
+def write_log(user_id, action):
+    """
+    Chèn một mục log vào bảng logs với user_id, hành động và timestamp.
+    """
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # Sử dụng truy vấn tham số để tránh SQL Injection【9†L146-L154】
+        cur.execute(
+            "INSERT INTO logs (user_id, action, created_at) VALUES (%s, %s, NOW())",
+            (user_id, action)
+        )
+        conn.commit()  # commit ngay để ghi log vĩnh viễn【14†L662-L670】
+    except Exception as e:
+        print("Log Error:", e)
+        conn.rollback()  # rollback nếu có lỗi
+    finally:
+        cur.close()
+        conn.close()  # Đóng kết nối (contextlib.closing tương tự)【20†L175-L182】
+
+
 # Hàm lấy thông tin user nhanh
 def get_user_info(user_id):
     with closing(get_db()) as conn:
@@ -70,6 +91,7 @@ def login():
         
         if user:
             session.update({"user_id": user["id"], "role_id": user["role_id"], "fullname": user["fullname"]})
+            write_log(user["id"], "Đăng nhập")
             return redirect(url_for("admin_dashboard")) if user["role_id"] == 1 else redirect(url_for("home"))
         return render_template("login.html", message="Sai tài khoản hoặc mật khẩu!")
     return render_template("login.html")
@@ -83,6 +105,7 @@ def register():
                 with closing(conn.cursor()) as cursor:
                     cursor.execute("INSERT INTO users (username, password, fullname, phone, email, role_id, points) VALUES (%s, %s, %s, %s, %s, 2, 0)", data)
                     conn.commit()
+                    write_log(cursor.lastrowid, "Đăng ký tài khoản")
             return render_template("login.html", message="Đăng ký thành công! Hãy đăng nhập.")
         except IntegrityError:
             return render_template("register.html", message="Tên tài khoản đã tồn tại!")
@@ -166,29 +189,57 @@ def checkout():
                     price = cursor.fetchone()["price"]
                     cursor.execute("INSERT INTO order_items (order_id, product_id, quantity, price, total) VALUES (%s,%s,%s,%s,%s)", 
                                    (order_id, item["product_id"], item["quantity"], price, price * item["quantity"]))
-
+                cursor.execute("""
+                    INSERT INTO receipts (order_id, user_id, amount, payment_method)
+                    VALUES (%s, %s, %s, %s)
+                """, (order_id, session["user_id"], total_amount, None))    
                 # Cộng điểm và trả bàn
                 points = int(total_amount // 10000)
                 cursor.execute("UPDATE users SET points = points + %s WHERE id=%s", (points, session["user_id"]))
                 cursor.execute("UPDATE tables SET status = 0 WHERE id=%s", (table_id,))
                 
                 conn.commit()
-                return jsonify({"message": "Thành công", "order_id": order_id})
+                write_log(session["user_id"], f"Thanh toán đơn hàng #{order_id}")
+                return jsonify({"message": "Thành công", "order_id": order_id, "points": points})
             except Exception as e:
                 conn.rollback()
                 return jsonify({"error": str(e)}), 500
 
-@app.route("/invoice/<int:order_id>")
+# @app.route("/invoice/<int:order_id>")
+# @login_required
+# def export_invoice_pdf(order_id):
+#     with closing(get_db()) as conn:
+#         with closing(conn.cursor(dictionary=True)) as cursor:
+#             cursor.execute("SELECT o.*, t.table_name, u.fullname FROM orders o JOIN tables t ON o.table_id = t.id JOIN users u ON o.user_id = u.id WHERE o.id = %s", (order_id,))
+#             order = cursor.fetchone()
+#             cursor.execute("SELECT oi.*, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = %s", (order_id,))
+#             items = cursor.fetchall()
+#     return render_template('invoice.html', order=order, items=items)
+
+@app.route("/receipt/<int:order_id>")
 @login_required
-def export_invoice_pdf(order_id):
+def view_receipt(order_id):
     with closing(get_db()) as conn:
         with closing(conn.cursor(dictionary=True)) as cursor:
-            cursor.execute("SELECT o.*, t.table_name, u.fullname FROM orders o JOIN tables t ON o.table_id = t.id JOIN users u ON o.user_id = u.id WHERE o.id = %s", (order_id,))
+            
+            cursor.execute("""
+                SELECT o.*, t.table_name, u.fullname
+                FROM orders o
+                JOIN tables t ON o.table_id = t.id
+                JOIN users u ON o.user_id = u.id
+                WHERE o.id = %s
+            """, (order_id,))
             order = cursor.fetchone()
-            cursor.execute("SELECT oi.*, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = %s", (order_id,))
-            items = cursor.fetchall()
-    return render_template('invoice.html', order=order, items=items)
 
+            cursor.execute("""
+                SELECT oi.*, p.name
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                WHERE oi.order_id = %s
+            """, (order_id,))
+            items = cursor.fetchall()
+
+    return render_template("receipt.html", order=order, items=items)
 # ==========================================
 # QUẢN TRỊ ADMIN (NẾU CÓ DÙNG)
 # ==========================================
@@ -248,11 +299,17 @@ def admin_products():
 
                 if action == "add":
                     cursor.execute("INSERT INTO products (name, price, category_id, image_url, status) VALUES (%s,%s,%s,%s, 1)", (name, price, cat_id, img))
+                    conn.commit()
+                    write_log(session["user_id"], f"Thêm sản phẩm {name}")
                 elif action == "edit":
                     cursor.execute("UPDATE products SET name=%s, price=%s, category_id=%s, image_url=%s WHERE id=%s", (name, price, cat_id, img, p_id))
+                    conn.commit()
+                    write_log(session["user_id"], f"Sửa sản phẩm ID={p_id}")
                 elif action == "delete":
                     cursor.execute("UPDATE products SET status=0 WHERE id=%s", (p_id,))
-                conn.commit()
+                    conn.commit()
+                    write_log(session["user_id"], f"Xóa sản phẩm ID={p_id}")
+
 
             cursor.execute("SELECT p.*, c.name as cat_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.status=1")
             products = cursor.fetchall()

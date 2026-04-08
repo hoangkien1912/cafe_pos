@@ -197,9 +197,11 @@
                 const data = await response.json();
                 
                 if (data.order_id) {
-                    alert(`Thanh toán thành công! Khách hàng được cộng thêm ${data.points_added} điểm.`);
-                    // CHÚ Ý: Chuyển hướng trực tiếp tới Route invoice
-                    window.location.href = `/invoice/${data.order_id}`;
+                    // alert(`Thanh toán thành công! Khách hàng được cộng thêm ${data.points_added} điểm.`);
+                    // // CHÚ Ý: Chuyển hướng trực tiếp tới Route invoice
+                    // window.location.href = `/invoice/${data.order_id}`;
+                    alert("Khách hàng được cộng thêm " + data.points + " điểm.");
+                    window.location.href = "/receipt/" + data.order_id;
                 } else {
                     alert('Lỗi: ' + (data.error || 'Không xác định'));
                     btn.disabled = false;

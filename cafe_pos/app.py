@@ -1,10 +1,9 @@
-from flask import Flask, jsonify, redirect, render_template, request, session, url_for, make_response
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 import mysql.connector
 from mysql.connector import Error, IntegrityError
 from datetime import datetime
 from functools import wraps
 from contextlib import closing
-import pdfkit
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -272,19 +271,25 @@ def admin_reports():
             daily_reports = cursor.fetchall()
     return render_template("admin.html", page="reports", daily_reports=daily_reports)
 
-@app.route("/admin/report/pdf")
+@app.route("/admin/report/view")
 @admin_required
-def export_admin_report_pdf():
-    # Tái sử dụng logic lấy dữ liệu báo cáo để in PDF
+def admin_report_view():
     with closing(get_db()) as conn:
         with closing(conn.cursor(dictionary=True)) as cursor:
             cursor.execute("SELECT SUM(total_amount) as total FROM orders WHERE status=1")
             revenue = cursor.fetchone()["total"] or 0
-            cursor.execute("SELECT DATE(created_at) as date, SUM(total_amount) as revenue FROM orders GROUP BY DATE(created_at) ORDER BY date DESC")
+
+            cursor.execute("""
+                SELECT DATE(created_at) as date, 
+                       SUM(total_amount) as revenue 
+                FROM orders 
+                GROUP BY DATE(created_at) 
+                ORDER BY date DESC
+            """)
             data = cursor.fetchall()
 
-    html = render_template("admin_report_pdf.html", revenue=revenue, data=data, now=datetime.now())
-    return create_pdf_response(html, "Bao_Cao_Doanh_Thu.pdf")
+    # Render ra trang HTML để xem
+    return render_template("admin_report.html", revenue=revenue, data=data, now=datetime.now())
 
 @app.route("/admin/products", methods=["GET", "POST"])
 @admin_required

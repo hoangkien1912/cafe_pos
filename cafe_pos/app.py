@@ -204,17 +204,6 @@ def checkout():
                 conn.rollback()
                 return jsonify({"error": str(e)}), 500
 
-# @app.route("/invoice/<int:order_id>")
-# @login_required
-# def export_invoice_pdf(order_id):
-#     with closing(get_db()) as conn:
-#         with closing(conn.cursor(dictionary=True)) as cursor:
-#             cursor.execute("SELECT o.*, t.table_name, u.fullname FROM orders o JOIN tables t ON o.table_id = t.id JOIN users u ON o.user_id = u.id WHERE o.id = %s", (order_id,))
-#             order = cursor.fetchone()
-#             cursor.execute("SELECT oi.*, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = %s", (order_id,))
-#             items = cursor.fetchall()
-#     return render_template('invoice.html', order=order, items=items)
-
 @app.route("/receipt/<int:order_id>")
 @login_required
 def view_receipt(order_id):

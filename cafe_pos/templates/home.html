@@ -108,7 +108,7 @@
                             </div>
                             <div class="text-right">
                                 <p class="font-black text-slate-800 text-lg">{{ "{:,.0f}".format(order.total_amount) }}đ</p>
-                                <p class="text-xs font-medium text-emerald-600 mt-1">+{{ (order.total_amount // 1000) | int }} điểm</p>
+                                <p class="text-xs font-medium text-emerald-600 mt-1">+{{ (order.total_amount // 10000) | int }} điểm</p>
                             </div>
                         </div>
                         {% endfor %}
